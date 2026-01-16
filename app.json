@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "PodStacker",
+    "slug": "podstacker",
+    "scheme": "podstacker",
+    "version": "0.1.0",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "permissions": ["FOREGROUND_SERVICE", "WAKE_LOCK"]
+    }
+  }
+}
