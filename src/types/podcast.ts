@@ -10,6 +10,7 @@ export type Podcast = {
   artwork?: string;
   addedAt: number;
   autoDownload?: boolean;
+  lastRefreshed?: number;
 
 };
 

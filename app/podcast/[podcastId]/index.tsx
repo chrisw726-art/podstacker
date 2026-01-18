@@ -162,7 +162,7 @@ export default function PodcastDetailScreen() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: theme.textMuted }}>Loading…</Text>
+        <Text style={{ color: theme.textSecondary }}>Loading…</Text>
       </View>
     );
   }
@@ -181,7 +181,7 @@ export default function PodcastDetailScreen() {
           {podcast.title}
         </Text>
 
-        <Text style={{ color: theme.textMuted, marginTop: 2 }}>
+        <Text style={{ color: theme.textSecondary, marginTop: 2 }}>
           {podcast.publisher}
         </Text>
 
@@ -195,11 +195,11 @@ export default function PodcastDetailScreen() {
         >
           <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
             <Pressable onPress={() => router.back()}>
-              <Text style={{ color: theme.brandAccent, fontSize: 30 }}>≪</Text>
+              <Text style={{ color: theme.brandPrimary, fontSize: 30 }}>≪</Text>
             </Pressable>
             
             <Pressable onPress={deletePodcast}>
-              <Text style={{ color: "#e74c3c", fontSize: 24 }}>🗑️</Text>
+              <Text style={{ color: theme.error, fontSize: 24 }}>🗑️</Text>
             </Pressable>
           </View>
 
@@ -210,15 +210,15 @@ export default function PodcastDetailScreen() {
                 paddingVertical: 6,
                 borderRadius: 14,
                 backgroundColor: podcast.autoDownload
-                  ? "#1f5a34"
-                  : theme.surfaceRaised,
+                  ? theme.success + "33"
+                  : theme.surface,
               }}
             >
               <Text
                 style={{
                   color: podcast.autoDownload
-                    ? "#2ecc71"
-                    : theme.textMuted,
+                    ? theme.success
+                    : theme.textTertiary,
                   fontWeight: "800",
                   fontSize: 14,
                   letterSpacing: 1,
@@ -230,7 +230,7 @@ export default function PodcastDetailScreen() {
 
             <Text
               style={{
-                color: theme.brandAccent,
+                color: theme.brandPrimary,
                 fontSize: 11,
                 marginTop: 4,
                 fontWeight: "600",
@@ -241,7 +241,7 @@ export default function PodcastDetailScreen() {
             </Text>
             <Text
               style={{
-                color: theme.brandAccent,
+                color: theme.brandPrimary,
                 fontSize: 10,
                 marginTop: -1,
                 opacity: 0.8,
@@ -255,7 +255,7 @@ export default function PodcastDetailScreen() {
           <Pressable onPress={refreshThisPodcast} disabled={refreshing}>
             <Text
               style={{
-                color: theme.brandAccent,
+                color: theme.brandPrimary,
                 fontSize: 42,
                 opacity: refreshing ? 0.5 : 1,
               }}
@@ -301,7 +301,7 @@ export default function PodcastDetailScreen() {
                   <Text
                     style={{
                       color: isDone
-                        ? theme.textMuted
+                        ? theme.textTertiary
                         : theme.textPrimary,
                       fontWeight: "700",
                     }}
@@ -312,7 +312,7 @@ export default function PodcastDetailScreen() {
 
                   <Text
                     style={{
-                      color: theme.textMuted,
+                      color: theme.textSecondary,
                       marginTop: 2,
                       fontSize: 12,
                     }}
@@ -326,7 +326,7 @@ export default function PodcastDetailScreen() {
                     width: 48,
                     height: 48,
                     borderRadius: 10,
-                    backgroundColor: theme.surfaceRaised,
+                    backgroundColor: theme.surface,
                     overflow: "hidden",
                     marginLeft: 10,
                   }}
@@ -342,8 +342,8 @@ export default function PodcastDetailScreen() {
                           right: 0,
                           height: `${isDone ? 100 : Math.round(progress * 100)}%`,
                           backgroundColor: isDone
-                            ? theme.brandAccent + "22"
-                            : theme.brandAccent + "55",
+                            ? theme.brandPrimary + "22"
+                            : theme.brandPrimary + "55",
                         }}
                       />
                     )}
@@ -368,7 +368,7 @@ export default function PodcastDetailScreen() {
                     {!rec ? (
                       <Text
                         style={{
-                          color: theme.brandAccent,
+                          color: theme.brandSecondary,
                           fontSize: 26,
                           fontWeight: "800",
                         }}
@@ -378,7 +378,7 @@ export default function PodcastDetailScreen() {
                     ) : rec.status === "done" ? (
                       <Text
                         style={{
-                          color: theme.textMuted,
+                          color: theme.textTertiary,
                           fontSize: 22,
                         }}
                       >

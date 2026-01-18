@@ -1,5 +1,5 @@
 import { usePathname, useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, StatusBar, Platform } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,21 +15,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   function Tab({ label, route, active }: any) {
-  return (
-    <Pressable
-      disabled={active}
-      onPress={() => {
-        if (!active) router.push(route);
-      }}
-      style={[
-        styles.tab,
-        {
-          borderBottomColor: active ? theme.brandPrimary : "transparent",
-          opacity: active ? 1 : 0.85
-        }
-      ]}
-    >
-
+    return (
+      <Pressable
+        disabled={active}
+        onPress={() => {
+          if (!active) router.push(route);
+        }}
+        style={[
+          styles.tab,
+          {
+            borderBottomColor: active ? theme.brandPrimary : "transparent",
+            opacity: active ? 1 : 0.85
+          }
+        ]}
+      >
         <Text
           style={{
             color: active ? theme.brandPrimary : theme.textSecondary,
@@ -43,42 +42,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 44;
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.appBackground }}>
-      {/* ---------- Top identity row ---------- */}
+      <StatusBar barStyle="light-content" backgroundColor={theme.surface} />
+      
+      <View style={{ height: statusBarHeight, backgroundColor: theme.surface }} />
+      
       <View style={[styles.identityRow, { backgroundColor: theme.surface }]}>
         <Image
           source={require("../../assets/branding/podstacker-logo.png")}
           resizeMode="contain"
-          style={{ height: 125, width: 240 }}
+          style={{ height: 125, width: 200, marginLeft: 1 }}
         />
-
         <View
-  style={{
-    justifyContent: "center",
-    marginLeft: "auto",
-    marginRight:  6
-  }}
->
-
-
-
+          style={{
+            justifyContent: "center",
+            marginLeft: "auto",
+            marginRight: 8
+          }}
+        >
           <Text
             numberOfLines={1}
             style={{
               color: theme.textSecondary,
               fontWeight: "100",
-              textAlign: "left"
+              textAlign: "right",
+              fontSize: 10
             }}
           >
-            byWojo.com
+            @byWojo.com
           </Text>
         </View>
-
-        <Text style={{ color: theme.textSecondary, fontSize: 22 }}>☰</Text>
+        <Pressable 
+          onPress={() => router.push("/settings")}
+          style={{
+            paddingHorizontal: 15,
+            paddingVertical: 8
+          }}
+        >
+          <Text style={{ color: theme.textSecondary, fontSize: 32 }}>☰</Text>
+        </Pressable>
       </View>
 
-      {/* ---------- Navigation row ---------- */}
       <View style={[styles.navRow, { borderBottomColor: theme.divider }]}>
         <Tab label="Library" route="/library" active={isActive("library")} />
         <Tab label="Search" route="/search" active={isActive("search")} />
@@ -89,7 +96,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
       </View>
 
-      {/* ---------- App content ---------- */}
       <View style={{ flex: 1, backgroundColor: theme.appBackground }}>
         {children}
       </View>
@@ -99,8 +105,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   identityRow: {
-    height: 56,
-    paddingHorizontal: 14,
+    height: 60,
+    paddingLeft: 0,
+    paddingRight: 4,
     flexDirection: "row",
     alignItems: "center"
   },
