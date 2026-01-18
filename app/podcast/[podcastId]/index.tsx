@@ -10,6 +10,7 @@ import {
   getLibrary,
   getEpisodesForPodcast,
   refreshLibraryFeeds,
+  removeFromLibrary,
 } from "../../../src/state/library";
 
 import {
@@ -61,22 +62,37 @@ export default function PodcastDetailScreen() {
   /* ---------- load podcast + episodes ---------- */
 
   useEffect(() => {
-    if (!podcastId) return;
+    if (!podcastId) {
+      console.log("❌ No podcastId provided");
+      return;
+    }
 
     let mounted = true;
     const id = podcastId;
+    console.log("🔍 Loading podcast:", id);
 
     async function load() {
-      const lib = await getLibrary();
-      if (!mounted) return;
+      try {
+        const lib = await getLibrary();
+        console.log("📚 Library keys:", Object.keys(lib));
+        
+        if (!mounted) return;
 
-      setPodcast(lib[id] ?? null);
+        const foundPodcast = lib[id];
+        console.log("🎙️ Found podcast:", foundPodcast ? foundPodcast.title : "NOT FOUND");
+        
+        setPodcast(foundPodcast ?? null);
 
-      const eps = await getEpisodesForPodcast(id);
-      if (!mounted) return;
+        const eps = await getEpisodesForPodcast(id);
+        console.log("📝 Episodes loaded:", eps.length);
+        
+        if (!mounted) return;
 
-      setEpisodes(eps);
-      setDownloads({ ...getAllDownloads() });
+        setEpisodes(eps);
+        setDownloads({ ...getAllDownloads() });
+      } catch (error) {
+        console.error("❌ Error loading podcast:", error);
+      }
     }
 
     load();
@@ -123,6 +139,19 @@ export default function PodcastDetailScreen() {
     setPodcast({ ...current, autoDownload: val });
   }
 
+  /* ---------- delete podcast ---------- */
+
+  async function deletePodcast() {
+    if (!podcastId) return;
+    
+    try {
+      await removeFromLibrary(podcastId);
+      router.back();
+    } catch (error) {
+      console.error("Failed to delete podcast:", error);
+    }
+  }
+
   if (!podcastId || !podcast) {
     return (
       <View
@@ -164,9 +193,15 @@ export default function PodcastDetailScreen() {
             justifyContent: "space-between",
           }}
         >
-          <Pressable onPress={() => router.back()}>
-            <Text style={{ color: theme.brandAccent, fontSize: 30 }}>≪</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
+            <Pressable onPress={() => router.back()}>
+              <Text style={{ color: theme.brandAccent, fontSize: 30 }}>≪</Text>
+            </Pressable>
+            
+            <Pressable onPress={deletePodcast}>
+              <Text style={{ color: "#e74c3c", fontSize: 24 }}>🗑️</Text>
+            </Pressable>
+          </View>
 
           <Pressable onPress={() => setAutoDownload(!podcast.autoDownload)}>
             <View
@@ -243,108 +278,117 @@ export default function PodcastDetailScreen() {
           const isDone = rec?.status === "done";
 
           return (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Image
-                source={{ uri: podcast.artworkUrl }}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 8,
-                  backgroundColor: theme.surface,
-                }}
-              />
-
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text
+            <Pressable
+              onPress={() => {
+                router.push({
+                  pathname: "/episode/[episodeId]",
+                  params: { episodeId: item.id },
+                });
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Image
+                  source={{ uri: podcast.artworkUrl }}
                   style={{
-                    color: isDone
-                      ? theme.textMuted
-                      : theme.textPrimary,
-                    fontWeight: "700",
+                    width: 44,
+                    height: 44,
+                    borderRadius: 8,
+                    backgroundColor: theme.surface,
                   }}
-                  numberOfLines={2}
-                >
-                  {item.title}
-                </Text>
+                />
 
-                <Text
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text
+                    style={{
+                      color: isDone
+                        ? theme.textMuted
+                        : theme.textPrimary,
+                      fontWeight: "700",
+                    }}
+                    numberOfLines={2}
+                  >
+                    {item.title}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: theme.textMuted,
+                      marginTop: 2,
+                      fontSize: 12,
+                    }}
+                  >
+                    {formatAge(item.pubDate)}
+                  </Text>
+                </View>
+
+                <View
                   style={{
-                    color: theme.textMuted,
-                    marginTop: 2,
-                    fontSize: 12,
+                    width: 48,
+                    height: 48,
+                    borderRadius: 10,
+                    backgroundColor: theme.surfaceRaised,
+                    overflow: "hidden",
+                    marginLeft: 10,
                   }}
                 >
-                  {formatAge(item.pubDate)}
-                </Text>
+                  {rec &&
+                    rec.status !== "idle" &&
+                    rec.status !== "error" && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: `${isDone ? 100 : Math.round(progress * 100)}%`,
+                          backgroundColor: isDone
+                            ? theme.brandAccent + "22"
+                            : theme.brandAccent + "55",
+                        }}
+                      />
+                    )}
+
+                  <Pressable
+                    onPress={() => {
+                      if (!rec) enqueueDownload(podcastId, item);
+                      else if (
+                        rec.status === "downloading" ||
+                        rec.status === "queued"
+                      )
+                        pauseDownload(item.id);
+                      else if (rec.status === "paused")
+                        resumeDownload(item.id);
+                    }}
+                    style={{
+                      flex: 1,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {!rec ? (
+                      <Text
+                        style={{
+                          color: theme.brandAccent,
+                          fontSize: 26,
+                          fontWeight: "800",
+                        }}
+                      >
+                        ⬇
+                      </Text>
+                    ) : rec.status === "done" ? (
+                      <Text
+                        style={{
+                          color: theme.textMuted,
+                          fontSize: 22,
+                        }}
+                      >
+                        ✓
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                </View>
               </View>
-
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 10,
-                  backgroundColor: theme.surfaceRaised,
-                  overflow: "hidden",
-                  marginLeft: 10,
-                }}
-              >
-                {rec &&
-                  rec.status !== "idle" &&
-                  rec.status !== "error" && (
-                    <View
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${isDone ? 100 : Math.round(progress * 100)}%`,
-                        backgroundColor: isDone
-                          ? theme.brandAccent + "22"
-                          : theme.brandAccent + "55",
-                      }}
-                    />
-                  )}
-
-                <Pressable
-                  onPress={() => {
-                    if (!rec) enqueueDownload(podcastId, item);
-                    else if (
-                      rec.status === "downloading" ||
-                      rec.status === "queued"
-                    )
-                      pauseDownload(item.id);
-                    else if (rec.status === "paused")
-                      resumeDownload(item.id);
-                  }}
-                  style={{
-                    flex: 1,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {!rec ? (
-                    <Text
-                      style={{
-                        color: theme.brandAccent,
-                        fontSize: 26,
-                        fontWeight: "800",
-                      }}
-                    >
-                      ⬇
-                    </Text>
-                  ) : rec.status === "done" ? (
-                    <Text
-                      style={{
-                        color: theme.textMuted,
-                        fontSize: 22,
-                      }}
-                    >
-                      ✓
-                    </Text>
-                  ) : null}
-                </Pressable>
-              </View>
-            </View>
+            </Pressable>
           );
         }}
       />

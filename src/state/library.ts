@@ -32,12 +32,13 @@ async function setLibrary(map: Record<string, Podcast>) {
 
 async function getEpisodeMap(): Promise<Record<string, Episode[]>> {
   return readJson<Record<string, Episode[]>>(KEYS.EPISODES, {});
-  
+ 
 }
 
 async function getPinsMap(): Promise<Record<string, Pin[]>> {
   return readJson<Record<string, Pin[]>>(KEYS.PINS, {});
 }
+
 /* ✅ MUST be exported (used by podcast detail screen) */
 export async function getEpisodesForPodcast(podcastId: string): Promise<Episode[]> {
   const map = await getEpisodeMap();
@@ -47,7 +48,6 @@ export async function getEpisodesForPodcast(podcastId: string): Promise<Episode[
 async function setPinsMap(map: Record<string, Pin[]>) {
   await writeJson(KEYS.PINS, map);
 }
-
 
 function mergeEpisodes(local: Episode[], remote: Episode[]) {
   const byId = new Map<string, Episode>();
@@ -117,18 +117,16 @@ export async function refreshLibraryFeeds(): Promise<Record<string, number>> {
   const lib = await getLibrary();
   const podcasts = Object.values(lib || {});
   const epMap = await getEpisodeMap();
-
   const newByPodcast: Record<string, number> = {};
 
   for (const p of podcasts) {
     try {
       const remote = await fetchEpisodesFromFeed(p.id, p.feedUrl);
       const local = epMap[p.id] ?? [];
-
       const newlyFound = getNewEpisodes(local, remote);
       const merged = mergeEpisodes(local, remote);
-
       epMap[p.id] = merged.all;
+
       if (merged.newCount > 0) newByPodcast[p.id] = merged.newCount;
 
       // Auto-download only when enabled
@@ -144,10 +142,8 @@ export async function refreshLibraryFeeds(): Promise<Record<string, number>> {
   }
 
   await writeJson(KEYS.EPISODES, epMap);
-
   // 🔎 DEBUG: confirms episodes are being stored
   console.log("EPISODES SAVED FOR PODCASTS:", Object.keys(epMap));
-
   return newByPodcast;
 }
 

@@ -1,61 +1,96 @@
-import { useEffect, useState } from "react";
-import { searchApplePodcasts } from "../lib/directories/apple";
-import { searchPodcastIndex } from "../lib/directories/podcastIndex";
-import { Podcast } from "../types/podcast";
-import { addToLibrary, getLibrary } from "./library";
-import { getSettings } from "./settings";
+// src/state/search.ts
+import { searchPodcasts, PodcastSearchResult } from "../lib/itunesApi";
 
-/* ================================
-   Search State
-================================ */
+let searchState = {
+  query: "",
+  results: [] as PodcastSearchResult[],
+  loading: false,
+  error: null as string | null,
+  selectedCountry: "US",
+  selectedCategories: [] as string[],
+};
 
-export function useSearch() {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Podcast[]>([]);
-  const [libraryIds, setLibraryIds] = useState<Set<string>>(new Set());
+const listeners = new Set<() => void>();
 
-  /* Load library ids once so we can show "In Library" */
-  useEffect(() => {
-    refreshLibraryIds();
-  }, []);
+function notifyListeners() {
+  listeners.forEach((listener) => listener());
+}
 
-  async function refreshLibraryIds() {
-    const lib = await getLibrary();
-    setLibraryIds(new Set(Object.keys(lib)));
+export function subscribeToSearch(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function getSearchState() {
+  return searchState;
+}
+
+export function setQuery(query: string) {
+  searchState.query = query;
+  notifyListeners();
+}
+
+export async function search(query: string) {
+  const trimmed = query.trim();
+  
+  if (!trimmed) {
+    searchState.results = [];
+    searchState.query = "";
+    notifyListeners();
+    return;
   }
 
-  async function search() {
-    if (!query.trim()) return;
+  searchState.loading = true;
+  searchState.error = null;
+  searchState.query = trimmed;
+  notifyListeners();
 
-    const settings = await getSettings();
-    const source = settings.defaultDirectory ?? "apple";
-
-   const raw =
-  source === "podcastindex"
-    ? await searchPodcastIndex(query)
-    : await searchApplePodcasts(query);
-
-const items = Array.isArray(raw) ? raw : raw.results;
-
-setResults(items);
-
+  try {
+    const results = await searchPodcasts(trimmed, searchState.selectedCountry, 50);
+    searchState.results = results;
+    searchState.loading = false;
+    notifyListeners();
+  } catch (error) {
+    console.error("Search error:", error);
+    searchState.error = "Failed to search podcasts. Please try again.";
+    searchState.loading = false;
+    searchState.results = [];
+    notifyListeners();
   }
+}
 
-  async function addPodcastToLibrary(podcast: Podcast) {
-    await addToLibrary(podcast);
-    await refreshLibraryIds();
+export function clearResults() {
+  searchState.results = [];
+  searchState.query = "";
+  searchState.error = null;
+  notifyListeners();
+}
+
+export function setCountry(country: string) {
+  searchState.selectedCountry = country;
+  notifyListeners();
+  // Re-run search if there's an active query
+  if (searchState.query) {
+    search(searchState.query);
   }
+}
 
-  function isInLibrary(id: string) {
-    return libraryIds.has(id);
+export function addCategory(category: string) {
+  if (!searchState.selectedCategories.includes(category)) {
+    searchState.selectedCategories = [...searchState.selectedCategories, category];
+    notifyListeners();
   }
+}
 
-  return {
-    query,
-    setQuery,
-    results,
-    search,
-    addPodcastToLibrary,
-    isInLibrary
-  };
+export function removeCategory(category: string) {
+  searchState.selectedCategories = searchState.selectedCategories.filter(
+    (c) => c !== category
+  );
+  notifyListeners();
+}
+
+export function clearFilters() {
+  searchState.selectedCategories = [];
+  searchState.selectedCountry = "US";
+  notifyListeners();
 }
