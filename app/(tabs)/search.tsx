@@ -210,7 +210,7 @@ export default function SearchScreen() {
           flexDirection: "row",
           alignItems: "flex-end",
           marginBottom: -8,
-          gap: 6,
+          gap: 4,
         }}
       >
         {tabs.map((tab) => {
@@ -220,17 +220,20 @@ export default function SearchScreen() {
               key={tab.key}
               onPress={() => setActiveTab(tab.key)}
               style={{
-                paddingVertical: isActive ? 12 : 8,
-                paddingHorizontal: isActive ? 18 : 14,
-                borderTopLeftRadius: 12,
-                borderTopRightRadius: 12,
-                backgroundColor: isActive ? theme.surfaceRaised : theme.surface,
-                transform: [{ translateY: isActive ? -4 : 0 }],
-              }}
+  flex: 1,
+  paddingVertical: isActive ? 12 : 8,
+  paddingHorizontal: isActive ? 18 : 14,
+  borderTopLeftRadius: 12,
+  borderTopRightRadius: 12,
+  backgroundColor: isActive ? theme.surface : theme.surface,
+  transform: [{ translateY: isActive ? -4 : 0 }],
+  alignItems: "center",
+}}
+
             >
               <Text
                 style={{
-                  color: isActive ? theme.textPrimary : theme.textMuted,
+color: isActive ? theme.brandPrimary : theme.textPrimary,
                   fontWeight: isActive ? "700" : "500",
                   fontSize: isActive ? 15 : 13,
                 }}
@@ -260,11 +263,11 @@ export default function SearchScreen() {
             flexDirection: "row",
             alignItems: "center",
             marginBottom: 12,
-            gap: 6,
+            gap: 4,
           }}
         >
-          <Text style={{ color: theme.brandAccent, fontSize: 16 }}>←</Text>
-          <Text style={{ color: theme.brandAccent, fontSize: 14, fontWeight: "600" }}>
+          <Text style={{ color: theme.brandPrimary, fontSize: 16 }}>←</Text>
+          <Text style={{ color: theme.brandPrimary, fontSize: 14, fontWeight: "600" }}>
             Back
           </Text>
         </Pressable>
@@ -300,7 +303,7 @@ export default function SearchScreen() {
       <View style={{ marginBottom: 16 }}>
         <Text
           style={{
-            color: theme.brandAccent,
+            color: theme.brandPrimary,
             fontSize: 13,
             fontWeight: "700",
             marginBottom: 8,
@@ -311,12 +314,12 @@ export default function SearchScreen() {
 
         <View
           style={{
-            backgroundColor: theme.brandAccent + "30",
+            backgroundColor: theme.brandPrimary + "30",
             padding: 14,
             borderRadius: 12,
             borderWidth: 2,
-            borderColor: theme.brandAccent,
-            shadowColor: theme.brandAccent,
+            borderColor: theme.brandPrimary,
+            shadowColor: theme.brandPrimary,
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: 0.4,
             shadowRadius: 8,
@@ -342,7 +345,7 @@ export default function SearchScreen() {
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: theme.textMuted, fontWeight: "700" }}>PS</Text>
+              <Text style={{ color: theme.textSecondary, fontWeight: "700" }}>PS</Text>
             </View>
           )}
 
@@ -353,7 +356,7 @@ export default function SearchScreen() {
                 {pinnedPodcast.title}
               </Text>
             </Pressable>
-            <Text style={{ color: theme.textMuted, marginTop: 4, fontSize: 13 }}>
+            <Text style={{ color: theme.textSecondary, marginTop: 4, fontSize: 13 }}>
               {pinnedPodcast.publisher}
             </Text>
           </View>
@@ -363,7 +366,7 @@ export default function SearchScreen() {
             <Pressable
               onPress={() => add(pinnedPodcast)}
               style={{
-                backgroundColor: theme.brandAccent,
+                backgroundColor: theme.brandPrimary,
                 paddingVertical: 8,
                 paddingHorizontal: 12,
                 borderRadius: 8,
@@ -392,7 +395,7 @@ export default function SearchScreen() {
         ListEmptyComponent={
           <Text
             style={{
-              color: theme.textMuted,
+              color: theme.textSecondary,
               textAlign: "center",
               marginTop: 40,
             }}
@@ -429,7 +432,7 @@ export default function SearchScreen() {
                     justifyContent: "center",
                   }}
                 >
-                  <Text style={{ color: theme.textMuted, fontWeight: "700" }}>PS</Text>
+                  <Text style={{ color: theme.textSecondary, fontWeight: "700" }}>PS</Text>
                 </View>
               )}
 
@@ -440,7 +443,7 @@ export default function SearchScreen() {
                     {item.title}
                   </Text>
                 </Pressable>
-                <Text style={{ color: theme.textMuted, marginTop: 4, fontSize: 13 }}>
+                <Text style={{ color: theme.textSecondary, marginTop: 4, fontSize: 13 }}>
                   {item.publisher}
                 </Text>
               </View>
@@ -451,7 +454,7 @@ export default function SearchScreen() {
                   <Pressable
                     onPress={() => add(item)}
                     style={{
-                      backgroundColor: theme.brandAccent,
+                      backgroundColor: theme.brandPrimary,
                 
                       paddingVertical: 4,
                       paddingHorizontal: 8,
@@ -471,7 +474,7 @@ export default function SearchScreen() {
                   style={{
                     backgroundColor: theme.surface,
                     borderWidth: 1,
-                    borderColor: theme.brandAccent,
+                    borderColor: theme.brandPrimary,
                     paddingVertical: 4,
                     paddingHorizontal: 8,
                     borderRadius: 4,
@@ -479,13 +482,13 @@ export default function SearchScreen() {
                     alignItems: "center",
                   }}
                 >
-                  <Text style={{ color: theme.brandAccent, fontSize: 10, fontWeight: "700" }}>
+                  <Text style={{ color: theme.brandPrimary, fontSize: 10, fontWeight: "700" }}>
                     Similar
                   </Text>
                 </Pressable>
 
                 {already && (
-                  <Text style={{ color: theme.textMuted, fontSize: 11, textAlign: "center" }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 11, textAlign: "center" }}>
                     In Library
                   </Text>
                 )}
@@ -636,7 +639,7 @@ export default function SearchScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder="Search podcasts..."
-          placeholderTextColor={theme.textMuted}
+          placeholderTextColor={theme.textSecondary}
           style={{
             backgroundColor: theme.surface,
             color: theme.textPrimary,
@@ -654,7 +657,7 @@ export default function SearchScreen() {
           ListEmptyComponent={
             <Text
               style={{
-                color: theme.textMuted,
+                color: theme.textSecondary,
                 textAlign: "center",
                 marginTop: 40,
               }}
@@ -691,7 +694,7 @@ export default function SearchScreen() {
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={{ color: theme.textMuted, fontWeight: "700" }}>PS</Text>
+                    <Text style={{ color: theme.textSecondary, fontWeight: "700" }}>PS</Text>
                   </View>
                 )}
 
@@ -702,7 +705,7 @@ export default function SearchScreen() {
                       {item.title}
                     </Text>
                   </Pressable>
-                  <Text style={{ color: theme.textMuted, marginTop: 4, fontSize: 13 }}>
+                  <Text style={{ color: theme.textSecondary, marginTop: 4, fontSize: 13 }}>
                     {item.publisher}
                   </Text>
                 </View>
@@ -712,7 +715,7 @@ export default function SearchScreen() {
                   <Pressable
                     onPress={() => add(item)}
                     style={{
-                      backgroundColor: theme.brandAccent,
+                      backgroundColor: theme.brandPrimary,
                       paddingVertical: 8,
                       paddingHorizontal: 12,
                       borderRadius: 8,
@@ -724,7 +727,7 @@ export default function SearchScreen() {
                     </Text>
                   </Pressable>
                 ) : (
-                  <Text style={{ color: theme.textMuted, fontSize: 12, alignSelf: "center" }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12, alignSelf: "center" }}>
                     In Library
                   </Text>
                 )}
@@ -748,7 +751,7 @@ export default function SearchScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: theme.surfaceRaised,
+          backgroundColor: theme.surface,
           borderTopLeftRadius: 12,
           borderTopRightRadius: 12,
           padding: 16,

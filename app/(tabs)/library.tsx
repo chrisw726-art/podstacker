@@ -13,11 +13,15 @@ export default function LibraryScreen() {
     useLibrary();
 
   const [refreshingPodcasts, setRefreshingPodcasts] = useState<Set<string>>(new Set());
+  const [localNewEpisodes, setLocalNewEpisodes] = useState<Record<string, number>>({});
 
   async function handleRefreshSingle(podcastId: string) {
     setRefreshingPodcasts(prev => new Set(prev).add(podcastId));
     try {
-      await refreshSinglePodcast(podcastId);
+      const newCount = await refreshSinglePodcast(podcastId);
+      if (newCount > 0) {
+        setLocalNewEpisodes(prev => ({ ...prev, [podcastId]: newCount }));
+      }
       await reloadLibrary();
     } finally {
       setRefreshingPodcasts(prev => {
@@ -29,40 +33,41 @@ export default function LibraryScreen() {
   }
 
   async function handleRefreshAll() {
-    // Mark all podcasts as refreshing at the start
     const allIds = podcasts.map(p => p.id);
     setRefreshingPodcasts(new Set(allIds));
     
-    // Process each podcast one at a time
+    const newCounts: Record<string, number> = {};
+    
     for (let i = 0; i < podcasts.length; i++) {
       const podcast = podcasts[i];
       
       try {
-        await refreshSinglePodcast(podcast.id);
+        const newCount = await refreshSinglePodcast(podcast.id);
+        console.log(`Podcast ${podcast.title} has ${newCount} new episodes`);
+        if (newCount > 0) {
+          newCounts[podcast.id] = newCount;
+        }
         
-        // Create a new Set with remaining podcasts (force re-render)
         const remaining = allIds.slice(i + 1);
         setRefreshingPodcasts(new Set(remaining));
         
-        // Reload to show new episodes
         await reloadLibrary();
         
       } catch (error) {
         console.error(`Failed to refresh ${podcast.id}:`, error);
         
-        // Still remove from spinning on error
         const remaining = allIds.slice(i + 1);
         setRefreshingPodcasts(new Set(remaining));
       }
     }
     
-    // All done
+    console.log('All done refreshing. New counts:', newCounts);
     setRefreshingPodcasts(new Set());
+    setLocalNewEpisodes(newCounts);
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.appBackground, padding: 12 }}>
-      {/* Top row: title + refresh all */}
       <View
         style={{
           flexDirection: "row",
@@ -105,11 +110,17 @@ export default function LibraryScreen() {
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderItem={({ item }) => {
           const isRefreshing = refreshingPodcasts.has(item.id);
+          const episodeCount = (newEpisodes?.[item.id] || 0) + (localNewEpisodes[item.id] || 0);
           
           return (
             <Pressable
               onPress={() => {
                 clearNewForPodcast(item.id);
+                setLocalNewEpisodes(prev => {
+                  const next = { ...prev };
+                  delete next[item.id];
+                  return next;
+                });
 
                 router.push({
                   pathname: "/podcast/[podcastId]",
@@ -218,7 +229,7 @@ export default function LibraryScreen() {
                   </View>
                 )}
 
-                {newEpisodes?.[item.id] > 0 && (
+                {episodeCount > 0 && (
                   <View
                     style={{
                       minWidth: 20,
@@ -236,7 +247,7 @@ export default function LibraryScreen() {
                         fontWeight: "700",
                       }}
                     >
-                      {newEpisodes[item.id]}
+                      {episodeCount}
                     </Text>
                   </View>
                 )}

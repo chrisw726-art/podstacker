@@ -68,13 +68,13 @@ function mergeEpisodes(local: Episode[], remote: Episode[]) {
 }
 
 function countNewEpisodes(episodes: Episode[], lastRefreshed?: number): number {
-  if (!lastRefreshed) return 0;
-
+  if (!lastRefreshed) return episodes.length; // Show all episodes as "new" for first refresh
   return episodes.filter((ep) => {
     const pubTime = Date.parse(ep.pubDate ?? "") || 0;
     return pubTime > lastRefreshed;
   }).length;
 }
+
 
 function getNewEpisodes(local: Episode[], remote: Episode[]) {
   const localIds = new Set(local.map((e) => e.id));
