@@ -94,4 +94,19 @@ export const themes: Record<string, Theme> = {
     error: "#ff5252",
     success: "#00e676",
   },
+
+  automotive: {
+    appBackground: "#0a0a0a",
+    surface: "#1a1a1a",
+    surfaceVariant: "#252525",
+    brandPrimary: "#00d4ff",
+    brandSecondary: "#ff9500",
+    textPrimary: "#ffffff",
+    textSecondary: "#b8c5d0",
+    textTertiary: "#6b7785",
+    divider: "#2a2a2a",
+    error: "#ff3b30",
+    success: "#30d158",
+  },
+
 };

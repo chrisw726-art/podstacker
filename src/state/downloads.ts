@@ -71,20 +71,17 @@ async function ensureDirectory() {
 export async function initDownloadManager() {
   await ensureDirectory();
   records = await getDownloadMap();
-
   for (const id in records) {
     if (records[id].status === "downloading") {
       records[id].status = "paused";
     }
   }
-
   await saveDownloadMap(records);
   notify();
 }
 
 // auto init
 let _initPromise: Promise<void> | null = null;
-
 function ensureDownloadsReady() {
   if (!_initPromise) {
     _initPromise = initDownloadManager().catch(console.error);
@@ -135,13 +132,10 @@ export function isEpisodeDownloaded(episodeId: string) {
 
 function tryStartNext() {
   if (active.size >= MAX_ACTIVE) return;
-
   const nextId = queue.shift();
   if (!nextId) return;
-
   const rec = records[nextId];
   if (!rec) return;
-
   startDownload(rec);
 }
 
@@ -151,11 +145,14 @@ async function startDownload(rec: DownloadRecord) {
     rec.progress = 0;
     notify();
 
+    // Sanitize filename to remove special characters
+    const sanitizedId = rec.episodeId.replace(/[:/\\?%*|"<>]/g, '_');
+    
     const resumable =
       resumables[rec.episodeId] ??
       FileSystem.createDownloadResumable(
         rec.audioUrl,
-        `${DOWNLOAD_DIR}${rec.episodeId}.mp3`,
+        `${DOWNLOAD_DIR}${sanitizedId}.mp3`,
         {},
         (p) => {
           const total = p.totalBytesExpectedToWrite || 1;
@@ -173,7 +170,6 @@ async function startDownload(rec: DownloadRecord) {
     rec.status = "done";
     rec.progress = 1;
     active.delete(rec.episodeId);
-
     await saveDownloadMap(records);
     notify();
     tryStartNext();
@@ -193,9 +189,7 @@ async function startDownload(rec: DownloadRecord) {
 
 export async function enqueueDownload(podcastId: string, ep: Episode, podcastArtwork?: string) {
   await ensureDownloadsReady();
-
   if (records[ep.id]) return;
-
   if (!ep.audioUrl) {
     console.warn("Episode missing audioUrl:", ep.title);
     return;
@@ -215,7 +209,6 @@ export async function enqueueDownload(podcastId: string, ep: Episode, podcastArt
 
   records[ep.id] = rec;
   queue.push(ep.id);
-
   await saveDownloadMap(records);
   notify();
   tryStartNext();
@@ -223,17 +216,14 @@ export async function enqueueDownload(podcastId: string, ep: Episode, podcastArt
 
 export async function pauseDownload(episodeId: string) {
   await ensureDownloadsReady();
-
   const rec = records[episodeId];
   if (!rec || rec.status !== "downloading") return;
 
   try {
     const r = resumables[episodeId];
     if (r) await r.pauseAsync();
-
     rec.status = "paused";
     active.delete(episodeId);
-
     await saveDownloadMap(records);
     notify();
     tryStartNext();
@@ -244,7 +234,6 @@ export async function pauseDownload(episodeId: string) {
 
 export async function resumeDownload(episodeId: string) {
   await ensureDownloadsReady();
-
   const rec = records[episodeId];
   if (!rec) return;
 
@@ -254,18 +243,34 @@ export async function resumeDownload(episodeId: string) {
     notify();
     return;
   }
-
   startDownload(rec);
 }
 
 export async function clearAllDownloads() {
   await ensureDownloadsReady();
   
+  // Stop all active downloads
   for (const id of active) {
     try {
       const r = resumables[id];
       if (r) await r.pauseAsync();
     } catch {}
+  }
+  
+  // Delete all files from storage
+  try {
+    const dirInfo = await FileSystem.getInfoAsync(DOWNLOAD_DIR);
+    if (dirInfo.exists) {
+      const files = await FileSystem.readDirectoryAsync(DOWNLOAD_DIR);
+      for (const file of files) {
+        if (file.endsWith('.mp3')) {
+          await FileSystem.deleteAsync(`${DOWNLOAD_DIR}${file}`);
+          console.log("🗑️ Deleted file:", file);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to delete files:", error);
   }
   
   records = {};
@@ -280,6 +285,7 @@ export async function clearAllDownloads() {
 export async function deleteDownload(episodeId: string) {
   await ensureDownloadsReady();
   
+  // Stop download if active
   if (active.has(episodeId)) {
     try {
       const r = resumables[episodeId];
@@ -288,16 +294,47 @@ export async function deleteDownload(episodeId: string) {
     active.delete(episodeId);
   }
   
+  // Remove from queue
   const queueIndex = queue.indexOf(episodeId);
   if (queueIndex > -1) {
     queue.splice(queueIndex, 1);
   }
   
+  // Delete the actual file from storage
+  const sanitizedId = episodeId.replace(/[:/\\?%*|"<>]/g, '_');
+  try {
+    const filePath = `${DOWNLOAD_DIR}${sanitizedId}.mp3`;
+    const fileInfo = await FileSystem.getInfoAsync(filePath);
+    if (fileInfo.exists) {
+      await FileSystem.deleteAsync(filePath);
+      console.log("🗑️ Deleted file:", filePath);
+    }
+  } catch (error) {
+    console.error("Failed to delete file:", error);
+  }
+  
+  // Remove from records
   delete records[episodeId];
   delete resumables[episodeId];
   
   await saveDownloadMap(records);
   notify();
+}
+
+/* --------------------------------
+ Playback URI resolution
+-------------------------------- */
+export function getPlaybackUri(episodeId: string, fallbackRemoteUrl: string): string {
+  const download = records[episodeId];
+  
+  // If downloaded and complete, use local file with sanitized name
+  if (download && download.status === "done") {
+    const sanitizedId = episodeId.replace(/[:/\\?%*|"<>]/g, '_');
+    return `${DOWNLOAD_DIR}${sanitizedId}.mp3`;
+  }
+  
+  // Otherwise use the remote URL
+  return fallbackRemoteUrl;
 }
 
 // kick init

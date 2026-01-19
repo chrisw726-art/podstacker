@@ -5,6 +5,7 @@ import { useTheme } from "../../../src/theme/ThemeProvider";
 import { Episode, Podcast } from "../../../src/types/podcast";
 import { getEpisodesForPodcast, getLibrary } from "../../../src/state/library";
 import { usePlayer } from "../../../src/state/player";
+import { getPlaybackUri } from "../../../src/state/downloads";
 
 export default function EpisodeScreen() {
   const { episodeId } = useLocalSearchParams<{ episodeId: string }>();
@@ -46,7 +47,7 @@ export default function EpisodeScreen() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: theme.textMuted }}>Loading...</Text>
+        <Text style={{ color: theme.textSecondary }}>Loading...</Text>
       </View>
     );
   }
@@ -55,12 +56,12 @@ export default function EpisodeScreen() {
     <View style={{ flex: 1, backgroundColor: theme.appBackground }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
         <Pressable onPress={() => router.back()}>
-          <Text style={{ color: theme.brandAccent, fontSize: 30, marginBottom: 16 }}>
+          <Text style={{ color: theme.brandPrimary, fontSize: 30, marginBottom: 16 }}>
             ≪
           </Text>
         </Pressable>
 
-        <Text style={{ color: theme.textMuted, fontSize: 14, marginBottom: 8 }}>
+        <Text style={{ color: theme.textSecondary, fontSize: 14, marginBottom: 8 }}>
           {podcast.title}
         </Text>
 
@@ -91,11 +92,12 @@ export default function EpisodeScreen() {
         <Pressable
           onPress={() => {
             if (episode.audioUrl) {
-              player.play(podcast, episode, episode.audioUrl);
+              const playbackUri = getPlaybackUri(episode.id, episode.audioUrl);
+              player.play(podcast, episode, playbackUri);
             }
           }}
           style={{
-            backgroundColor: theme.brandAccent,
+            backgroundColor: theme.brandPrimary,
             padding: 16,
             borderRadius: 12,
             alignItems: "center",

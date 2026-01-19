@@ -168,9 +168,9 @@ export default function LibraryScreen() {
                 >
                   <View
                     style={{
-                      width: 65,
-                      height: 65,
-                      borderRadius: 10,
+                      width: 75,
+                      height: 75,
+                      borderRadius: 0,
                       overflow: "hidden",
                       backgroundColor: theme.surfaceVariant,
                       marginRight: 12,
@@ -179,7 +179,7 @@ export default function LibraryScreen() {
                     {item.artworkUrl ? (
                       <Image
                         source={{ uri: item.artworkUrl }}
-                        style={{ width: 65, height: 65 }}
+                        style={{ width: 75, height: 75 }}
                       />
                     ) : (
                       <View

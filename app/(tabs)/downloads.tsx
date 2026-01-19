@@ -1,3 +1,5 @@
+import { getPlaybackUri } from "../../src/state/downloads";
+import * as FileSystem from "expo-file-system/legacy";
 import { View, Text, FlatList, Pressable, Alert, Image } from "react-native";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { useState, useEffect, useContext } from "react";
@@ -20,6 +22,8 @@ export default function DownloadsScreen() {
   const router = useRouter();
   const playerContext = useContext(PlayerContext);
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
+  const [, forceUpdate] = useState(0);
+
 
   useEffect(() => {
     const updateDownloads = () => {
@@ -45,6 +49,18 @@ export default function DownloadsScreen() {
     };
   }, []);
 
+    // Force re-render when player state changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (playerContext?.playing) {
+        forceUpdate(prev => prev + 1);
+      }
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, [playerContext?.playing]);
+
+
   const handleClearAll = () => {
     Alert.alert(
       "Clear All Downloads",
@@ -62,22 +78,44 @@ export default function DownloadsScreen() {
     );
   };
 
-  const handlePlayPausePress = (item: DownloadRecord) => {
-    if (!playerContext) return;
+  const handlePlayPausePress = async (item: DownloadRecord) => {
+  if (!playerContext) return;
+  
+  const isCurrentEpisode = playerContext.episode?.id === item.episodeId;
+  
+  if (isCurrentEpisode && playerContext.playing) {
+    playerContext.pause();
+  } else if (isCurrentEpisode && !playerContext.playing) {
+    playerContext.resume();
+  } else {
+    // Play directly from downloads using local file
+    const localUri = `${FileSystem.documentDirectory}podstacker/${item.episodeId}.mp3`;
     
-    const isCurrentEpisode = playerContext.episode?.id === item.episodeId;
+    // Create minimal episode and podcast objects for player
+    const episode = {
+      id: item.episodeId,
+      title: item.episodeTitle,
+      audioUrl: item.audioUrl,
+      durationSeconds: item.durationSeconds,
+      duration: item.duration,
+      description: "",
+      pubDate: "",
+      podcastId: item.podcastId,
+    };
     
-    if (isCurrentEpisode && playerContext.playing) {
-      playerContext.pause();
-    } else if (isCurrentEpisode && !playerContext.playing) {
-      playerContext.resume();
-    } else {
-      router.push({
-        pathname: "/episode/[episodeId]",
-        params: { episodeId: item.episodeId, podcastId: item.podcastId },
-      });
-    }
-  };
+    const podcast = {
+      id: item.podcastId,
+      title: "", 
+      artworkUrl: item.podcastArtwork || "",
+      feedUrl: "",
+      source: "apple" as const,
+      addedAt: Date.now(),
+    };
+    
+    playerContext.play(podcast, episode, localUri);
+  }
+};
+
 
   const handleDownloadPress = (item: DownloadRecord) => {
     if (item.status === "downloading") {
@@ -136,8 +174,12 @@ export default function DownloadsScreen() {
   };
 
   const handleDelete = (episodeId: string) => {
-    deleteDownload(episodeId);
-  };
+  if (playerContext?.episode?.id === episodeId) {
+    playerContext.release();
+  }
+  deleteDownload(episodeId);
+};
+
 
   if (downloads.length === 0) {
     return (
