@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import { Stack } from "expo-router";
 import { AppShell } from "../src/components/AppShell";
 import { PlayerProvider } from "../src/state/player";

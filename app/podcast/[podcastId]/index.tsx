@@ -350,7 +350,8 @@ export default function PodcastDetailScreen() {
 
                   <Pressable
                     onPress={() => {
-                      if (!rec) enqueueDownload(podcastId, item);
+                      if (!rec) enqueueDownload(podcastId, item, podcast.artworkUrl);
+
                       else if (
                         rec.status === "downloading" ||
                         rec.status === "queued"

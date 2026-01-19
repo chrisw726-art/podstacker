@@ -51,11 +51,9 @@ async function setPinsMap(map: Record<string, Pin[]>) {
 function mergeEpisodes(local: Episode[], remote: Episode[]) {
   const byId = new Map<string, Episode>();
   for (const e of local) byId.set(e.id, e);
-
   for (const e of remote) {
     byId.set(e.id, e);
   }
-
   const all = Array.from(byId.values())
     .sort((a, b) => {
       const ad = Date.parse(a.pubDate ?? "") || 0;
@@ -63,7 +61,6 @@ function mergeEpisodes(local: Episode[], remote: Episode[]) {
       return bd - ad;
     })
     .slice(0, 100);
-
   return all;
 }
 
@@ -74,7 +71,6 @@ function countNewEpisodes(episodes: Episode[], lastRefreshed?: number): number {
     return pubTime > lastRefreshed;
   }).length;
 }
-
 
 function getNewEpisodes(local: Episode[], remote: Episode[]) {
   const localIds = new Set(local.map((e) => e.id));
@@ -115,7 +111,6 @@ export async function setAutoDownload(id: string, val: boolean) {
   const lib = await getLibrary();
   const p = lib[id];
   if (!p) return;
-
   lib[id] = { ...p, autoDownload: val };
   await setLibrary(lib);
 }
@@ -133,7 +128,6 @@ export async function refreshLibraryFeeds(): Promise<Record<string, number>> {
       const local = epMap[p.id] ?? [];
       const newlyFound = getNewEpisodes(local, remote);
       const merged = mergeEpisodes(local, remote);
-
       epMap[p.id] = merged;
 
       const newCount = countNewEpisodes(merged, p.lastRefreshed);
@@ -154,9 +148,7 @@ export async function refreshLibraryFeeds(): Promise<Record<string, number>> {
 
   await writeJson(KEYS.EPISODES, epMap);
   await setLibrary(lib);
-
   console.log("EPISODES SAVED FOR PODCASTS:", Object.keys(epMap));
-
   return newByPodcast;
 }
 
@@ -173,7 +165,6 @@ export async function refreshSinglePodcast(podcastId: string): Promise<number> {
     const local = epMap[p.id] ?? [];
     const newlyFound = getNewEpisodes(local, remote);
     const merged = mergeEpisodes(local, remote);
-
     epMap[p.id] = merged;
 
     const newCount = countNewEpisodes(merged, p.lastRefreshed);
@@ -191,7 +182,6 @@ export async function refreshSinglePodcast(podcastId: string): Promise<number> {
 
     await writeJson(KEYS.EPISODES, epMap);
     await setLibrary(lib);
-
     return newCount;
   } catch {
     return 0;
@@ -269,6 +259,14 @@ export function useLibrary() {
     [reloadLibrary]
   );
 
+  const removePodcast = useCallback(
+    async (id: string) => {
+      await removeFromLibrary(id);
+      await reloadLibrary();
+    },
+    [reloadLibrary]
+  );
+
   return {
     podcasts,
     refreshing,
@@ -277,5 +275,6 @@ export function useLibrary() {
     newEpisodes,
     clearNewForPodcast,
     updateAutoDownload,
+    removePodcast,
   };
 }

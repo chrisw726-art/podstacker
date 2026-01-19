@@ -17,7 +17,8 @@ type PlayerContextType = {
   durationSeconds: number;
 };
 
-const PlayerContext = createContext<PlayerContextType | null>(null);
+export const PlayerContext = createContext<PlayerContextType | null>(null);
+
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [podcast, setPodcast] = useState<Podcast | null>(null);

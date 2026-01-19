@@ -21,6 +21,9 @@ export type DownloadRecord = {
   audioUrl: string;
   status: DownloadStatus;
   progress: number;
+  podcastArtwork?: string;
+  durationSeconds?: number;
+  duration?: string;
 };
 
 type DownloadMap = Record<string, DownloadRecord>;
@@ -81,6 +84,7 @@ export async function initDownloadManager() {
 
 // auto init
 let _initPromise: Promise<void> | null = null;
+
 function ensureDownloadsReady() {
   if (!_initPromise) {
     _initPromise = initDownloadManager().catch(console.error);
@@ -187,8 +191,9 @@ async function startDownload(rec: DownloadRecord) {
    Public actions
 -------------------------------- */
 
-export async function enqueueDownload(podcastId: string, ep: Episode) {
+export async function enqueueDownload(podcastId: string, ep: Episode, podcastArtwork?: string) {
   await ensureDownloadsReady();
+
   if (records[ep.id]) return;
 
   if (!ep.audioUrl) {
@@ -203,6 +208,9 @@ export async function enqueueDownload(podcastId: string, ep: Episode) {
     audioUrl: ep.audioUrl,
     status: "queued",
     progress: 0,
+    podcastArtwork,
+    durationSeconds: ep.durationSeconds,
+    duration: ep.duration,
   };
 
   records[ep.id] = rec;
@@ -215,6 +223,7 @@ export async function enqueueDownload(podcastId: string, ep: Episode) {
 
 export async function pauseDownload(episodeId: string) {
   await ensureDownloadsReady();
+
   const rec = records[episodeId];
   if (!rec || rec.status !== "downloading") return;
 
@@ -224,6 +233,7 @@ export async function pauseDownload(episodeId: string) {
 
     rec.status = "paused";
     active.delete(episodeId);
+
     await saveDownloadMap(records);
     notify();
     tryStartNext();
@@ -234,6 +244,7 @@ export async function pauseDownload(episodeId: string) {
 
 export async function resumeDownload(episodeId: string) {
   await ensureDownloadsReady();
+
   const rec = records[episodeId];
   if (!rec) return;
 
@@ -245,6 +256,48 @@ export async function resumeDownload(episodeId: string) {
   }
 
   startDownload(rec);
+}
+
+export async function clearAllDownloads() {
+  await ensureDownloadsReady();
+  
+  for (const id of active) {
+    try {
+      const r = resumables[id];
+      if (r) await r.pauseAsync();
+    } catch {}
+  }
+  
+  records = {};
+  active = new Set();
+  queue = [];
+  resumables = {};
+  
+  await saveDownloadMap({});
+  notify();
+}
+
+export async function deleteDownload(episodeId: string) {
+  await ensureDownloadsReady();
+  
+  if (active.has(episodeId)) {
+    try {
+      const r = resumables[episodeId];
+      if (r) await r.pauseAsync();
+    } catch {}
+    active.delete(episodeId);
+  }
+  
+  const queueIndex = queue.indexOf(episodeId);
+  if (queueIndex > -1) {
+    queue.splice(queueIndex, 1);
+  }
+  
+  delete records[episodeId];
+  delete resumables[episodeId];
+  
+  await saveDownloadMap(records);
+  notify();
 }
 
 // kick init
