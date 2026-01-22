@@ -1,11 +1,23 @@
 import { usePathname, useRouter } from "expo-router";
 import { Image, Pressable, StyleSheet, Text, View, StatusBar, Platform } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
+import { useState } from "react";
+import { useEffect } from "react";
+import { usePins } from "../state/pins";
+import PinModal from "./PinModal";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const router = useRouter();
   const path = usePathname();
+    const [pinModalVisible, setPinModalVisible] = useState(false);
+    const pins = usePins();
+
+  useEffect(() => {
+    if (pins.pendingPin) {
+      setPinModalVisible(true);
+    }
+  }, [pins.pendingPin]);
 
   function isActive(tab: string) {
     if (tab === "library") return path === "/" || path.startsWith("/library");
@@ -99,6 +111,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <View style={{ flex: 1, backgroundColor: theme.appBackground }}>
         {children}
       </View>
+            <PinModal 
+        visible={pinModalVisible} 
+        onClose={() => setPinModalVisible(false)} 
+      />
     </View>
   );
 }
