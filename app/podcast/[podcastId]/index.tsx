@@ -21,6 +21,8 @@ import {
   resumeDownload,
   DownloadRecord,
 } from "../../../src/state/downloads";
+import { usePlayer } from "../../../src/state/player";
+import { getPlaybackUri } from "../../../src/state/downloads";
 
 /* ---------------- age helper ---------------- */
 
@@ -54,6 +56,7 @@ export default function PodcastDetailScreen() {
 
   const [podcast, setPodcast] = useState<Podcast | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+    const player = usePlayer();
   const [downloads, setDownloads] = useState<Record<string, DownloadRecord>>(
     {}
   );
@@ -280,14 +283,9 @@ export default function PodcastDetailScreen() {
           return (
             <Pressable
               onPress={() => {
-                router.push({
-                  pathname: "/episode/[episodeId]",
-                  params: { episodeId: item.id },
-                });
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Image
+                // Constitution: Episodes start playing quietly, no navigation
+                const playbackUri = getPlaybackUri(item.id, item.audioUrl);
+                player.play(podcast, item, playbackUri);
                   source={{ uri: podcast.artworkUrl }}
                   style={{
                     width: 44,
