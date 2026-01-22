@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import { getSettings } from "../state/settings";
 import { getAllDownloads } from "../state/downloads";
 import { getPlaybackUri } from "../state/downloads";
+import { usePins } from "../state/pins";
 
 export default function MiniPlayer() {
   const theme = useTheme();
   const player = usePlayer();
+    const pins = usePins();
   const [skipForward, setSkipForward] = useState(30);
   const [skipBackward, setSkipBackward] = useState(15);
 
@@ -57,9 +59,8 @@ export default function MiniPlayer() {
   };
 
   const handlePinPress = () => {
-    // TODO: Implement pin creation flow
-    console.log("📌 Pin button pressed at position:", player.positionSeconds);
-  };
+    if (!player.episode || !player.podcast) return;
+    pins.startCapture(player.positionSeconds, player.episode, player.podcast);  };
 
   // Mini-player is ALWAYS visible (constitution requirement)
   // When idle, shows "Tap to start listening" state
