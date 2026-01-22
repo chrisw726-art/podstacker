@@ -286,8 +286,9 @@ export default function PodcastDetailScreen() {
                 // Constitution: Episodes start playing quietly, no navigation
                 const playbackUri = getPlaybackUri(item.id, item.audioUrl);
                 player.play(podcast, item, playbackUri);
-                  source={{ uri: podcast.artworkUrl }}
+              <Image
                   style={{
+                                    source={{ uri: podcast.artworkUrl }}
                     width: 44,
                     height: 44,
                     borderRadius: 8,
