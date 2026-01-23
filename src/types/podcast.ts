@@ -39,5 +39,6 @@ export type Pin = {
   podcastId: string;
   createdAt: number;
   positionSeconds: number;
+  endSeconds?: number;
   note?: string;
 };

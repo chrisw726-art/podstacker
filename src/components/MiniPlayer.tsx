@@ -10,7 +10,7 @@ import { usePins } from "../state/pins";
 export default function MiniPlayer() {
   const theme = useTheme();
   const player = usePlayer();
-    const pins = usePins();
+  const pins = usePins();
   const [skipForward, setSkipForward] = useState(30);
   const [skipBackward, setSkipBackward] = useState(15);
 
@@ -60,14 +60,22 @@ export default function MiniPlayer() {
 
   const handlePinPress = () => {
     if (!player.episode || !player.podcast) return;
-    pins.startCapture(player.positionSeconds, player.episode, player.podcast);  };
+    
+    if (pins.captureState.status === "idle") {
+      pins.startCapture(player.positionSeconds, player.episode, player.podcast);
+      console.log("📌 Started pin");
+    } else if (pins.captureState.status === "marking") {
+      pins.endCapture(player.positionSeconds);
+      console.log("📌 Ended pin");
+    }
+  };
 
-  // Mini-player is ALWAYS visible (constitution requirement)
-  // When idle, shows "Tap to start listening" state
   const hasEpisode = !!player.episode;
   const progress = player.durationSeconds > 0 
     ? (player.positionSeconds / player.durationSeconds) * 100 
     : 0;
+  
+  const isMarking = pins.captureState.status === "marking";
 
   return (
     <View
@@ -105,7 +113,7 @@ export default function MiniPlayer() {
       {hasEpisode ? (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {/* Artwork */}
-          {player.podcast?.artworkUrl ? (
+          {player.episode && player.podcast?.artworkUrl ? (
             <Image
               source={{ uri: player.podcast.artworkUrl }}
               style={{ width: 50, height: 50, borderRadius: 6, marginRight: 12 }}
@@ -136,7 +144,7 @@ export default function MiniPlayer() {
               }}
               numberOfLines={1}
             >
-              {player.episode.title}
+              {player.episode?.title}
             </Text>
             <Text
               style={{
@@ -193,11 +201,16 @@ export default function MiniPlayer() {
                 height: 36,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: theme.surfaceVariant,
+                backgroundColor: isMarking ? theme.error : theme.surfaceVariant,
                 borderRadius: 18,
+                borderWidth: isMarking ? 3 : 0,
+                borderColor: isMarking ? theme.error : "transparent",
+                transform: [{ scale: isMarking ? 1.1 : 1 }],
               }}
             >
-              <Text style={{ fontSize: 18 }}>📌</Text>
+              <Text style={{ fontSize: isMarking ? 20 : 18 }}>
+                {isMarking ? "⏺" : "📌"}
+              </Text>
             </Pressable>
 
             {/* Skip Forward */}
@@ -231,7 +244,6 @@ export default function MiniPlayer() {
           </View>
         </View>
       ) : (
-        // Idle state - mini-player remains visible
         <View style={{ alignItems: "center", paddingVertical: 8 }}>
           <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
             Tap a podcast to start listening
