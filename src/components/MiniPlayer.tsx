@@ -23,10 +23,10 @@ export default function MiniPlayer() {
     loadSettings();
   }, []);
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!player.episode) return;
     
-    const downloads = await getAllDownloads();
+    const downloads = getAllDownloads();
     const downloadList = Object.values(downloads).filter(d => d.status === "done");
     const currentIndex = downloadList.findIndex(d => d.episodeId === player.episode?.id);
     
@@ -60,7 +60,7 @@ export default function MiniPlayer() {
 
   const handlePinPress = () => {
     if (!player.episode || !player.podcast) return;
-    pins.startCapture(player.positionSeconds, player.episode, player.podcast);  };
+    pins.pins.startCapture(player.episode.id, player.podcast.id, player.positionSeconds)(player.positionSeconds, player.episode, player.podcast);  };
 
   // Mini-player is ALWAYS visible (constitution requirement)
   // When idle, shows "Tap to start listening" state
