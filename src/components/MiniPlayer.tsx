@@ -23,10 +23,10 @@ export default function MiniPlayer() {
     loadSettings();
   }, []);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!player.episode) return;
     
-    const downloads = getAllDownloads();
+    const downloads = await getAllDownloads();
     const downloadList = Object.values(downloads).filter(d => d.status === "done");
     const currentIndex = downloadList.findIndex(d => d.episodeId === player.episode?.id);
     
