@@ -11,6 +11,8 @@ export type Podcast = {
   addedAt: number;
   autoDownload?: boolean;
   lastRefreshed?: number;
+    refreshCount?: number;
+      lastEpisodeIds?: string[];
 
 };
 
