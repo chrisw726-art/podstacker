@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { Pin, Episode, Podcast } from "../types/podcast";
-import { addPin as savePinToLibrary } from "./library";
+import { addPin as savePinToStore } from "./pinsStore";
 
 type PinCaptureState = 
   | { status: "idle" }
@@ -72,7 +72,8 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
       note: note || "",
     };
 
-    await savePinToLibrary(pendingPin.podcast.id, pin);
+    await savePinToStore(pendingPin.podcast.id, pin);
+
     console.log("📌 PIN SAVED:", pin);
     
     setPendingPin(null);

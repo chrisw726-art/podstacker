@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Pressable, Text, TextInput, View, Image, StyleSheet } from "react-native";
-import { addPin } from "../../src/state/library";
+import { addPin } from "../../src/state/pinsStore";
 import { usePlayer } from "../../src/state/player";
 import { Pin } from "../../src/types/podcast";
 import { useTheme } from "../../src/theme/ThemeProvider";

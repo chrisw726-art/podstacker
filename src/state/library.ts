@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { KEYS, readJson, writeJson } from "../lib/storage";
 import { fetchEpisodesFromFeed } from "../lib/rss";
-import { Episode, Pin, Podcast } from "../types/podcast";
+import { Episode, Podcast } from "../types/podcast";
 import { enqueueDownload } from "./downloads";
 
 /* -----------------------------
@@ -21,7 +21,10 @@ function pickArtwork(p: any): string | undefined {
   );
 }
 
-/* ✅ exported (used by detail screen) */
+/* -----------------------------
+   Storage
+-------------------------------- */
+
 export async function getLibrary(): Promise<Record<string, Podcast>> {
   return readJson<Record<string, Podcast>>(KEYS.LIBRARY, {});
 }
@@ -34,38 +37,31 @@ async function getEpisodeMap(): Promise<Record<string, Episode[]>> {
   return readJson<Record<string, Episode[]>>(KEYS.EPISODES, {});
 }
 
-async function getPinsMap(): Promise<Record<string, Pin[]>> {
-  return readJson<Record<string, Pin[]>>(KEYS.PINS, {});
-}
+/* -----------------------------
+   Episodes
+-------------------------------- */
 
-/* ✅ MUST be exported (used by podcast detail screen) */
 export async function getEpisodesForPodcast(podcastId: string): Promise<Episode[]> {
   const map = await getEpisodeMap();
   return map[podcastId] ?? [];
 }
 
-async function setPinsMap(map: Record<string, Pin[]>) {
-  await writeJson(KEYS.PINS, map);
-}
-
 function mergeEpisodes(local: Episode[], remote: Episode[]) {
   const byId = new Map<string, Episode>();
   for (const e of local) byId.set(e.id, e);
-  for (const e of remote) {
-    byId.set(e.id, e);
-  }
-  const all = Array.from(byId.values())
+  for (const e of remote) byId.set(e.id, e);
+
+  return Array.from(byId.values())
     .sort((a, b) => {
       const ad = Date.parse(a.pubDate ?? "") || 0;
       const bd = Date.parse(b.pubDate ?? "") || 0;
       return bd - ad;
     })
     .slice(0, 100);
-  return all;
 }
 
 function countNewEpisodes(episodes: Episode[], lastRefreshed?: number): number {
-  if (!lastRefreshed) return episodes.length; // Show all episodes as "new" for first refresh
+  if (!lastRefreshed) return episodes.length;
   return episodes.filter((ep) => {
     const pubTime = Date.parse(ep.pubDate ?? "") || 0;
     return pubTime > lastRefreshed;
@@ -102,9 +98,7 @@ export async function removeFromLibrary(id: string) {
   delete epMap[id];
   await writeJson(KEYS.EPISODES, epMap);
 
-  const pins = await getPinsMap();
-  delete pins[id];
-  await setPinsMap(pins);
+  // pins are now handled in pinsStore.ts
 }
 
 export async function setAutoDownload(id: string, val: boolean) {
@@ -148,7 +142,6 @@ export async function refreshLibraryFeeds(): Promise<Record<string, number>> {
 
   await writeJson(KEYS.EPISODES, epMap);
   await setLibrary(lib);
-  console.log("EPISODES SAVED FOR PODCASTS:", Object.keys(epMap));
   return newByPodcast;
 }
 
@@ -168,7 +161,6 @@ export async function refreshSinglePodcast(podcastId: string): Promise<number> {
     epMap[p.id] = merged;
 
     const newCount = countNewEpisodes(merged, p.lastRefreshed);
-
     lib[p.id] = { ...p, lastRefreshed: now };
 
     if (p.autoDownload && newlyFound.length > 0) {
@@ -186,28 +178,6 @@ export async function refreshSinglePodcast(podcastId: string): Promise<number> {
   } catch {
     return 0;
   }
-}
-
-/* -----------------------------
-   Pins
--------------------------------- */
-
-export async function addPin(podcastId: string, pin: Pin) {
-  const pins = await getPinsMap();
-  const list = pins[podcastId] ?? [];
-  pins[podcastId] = [pin, ...list].slice(0, 200);
-  await setPinsMap(pins);
-}
-
-export async function removePin(podcastId: string, pinId: string) {
-  const pins = await getPinsMap();
-  pins[podcastId] = (pins[podcastId] ?? []).filter((p) => p.id !== pinId);
-  await setPinsMap(pins);
-}
-
-export async function getPins(podcastId: string) {
-  const pins = await getPinsMap();
-  return pins[podcastId] ?? [];
 }
 
 /* -----------------------------
