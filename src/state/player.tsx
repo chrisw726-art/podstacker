@@ -26,11 +26,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [uri, setUri] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const [positionSeconds, setPositionSeconds] = useState(0);
+  const [durationSeconds, setDurationSeconds] = useState(0);
+
   const playerRef = useRef<ReturnType<typeof useAudioPlayer> | null>(null);
-  
+
   const player = useAudioPlayer(uri ?? "", {
     updateInterval: 500,
-    downloadFirst: false
+    downloadFirst: false,
   });
 
   useEffect(() => {
@@ -41,12 +45,30 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIsPlaying(Boolean(player.playing));
   }, [player.playing]);
 
+  // 🔴 LIVE PLAYBACK POLLING (fixes frozen progress bar)
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const interval = setInterval(() => {
+      if (playerRef.current) {
+        const pos = Number(playerRef.current.currentTime ?? 0);
+        const dur = Number(playerRef.current.duration ?? 0);
+
+        setPositionSeconds(pos);
+        setDurationSeconds(dur);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
   const stopPlayer = () => {
     try {
       if (playerRef.current) {
         playerRef.current.pause();
         playerRef.current.seekTo(0);
       }
+      setPositionSeconds(0);
     } catch (error) {
       console.error("Error stopping player:", error);
     }
@@ -63,6 +85,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setEpisode(null);
       setUri(null);
       setIsPlaying(false);
+      setPositionSeconds(0);
+      setDurationSeconds(0);
       console.log("🗑️ Player released from memory");
     } catch (error) {
       console.error("Error releasing player:", error);
@@ -71,13 +95,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const playTrack = (p: Podcast, e: Episode, u: string) => {
     console.log("🎵 Playing:", e.title, "from", u);
-    
+
     stopPlayer();
-    
+
     setPodcast(p);
     setEpisode(e);
     setUri(u);
-    
+    setPositionSeconds(0);
+    setDurationSeconds(0);
+
     setTimeout(() => {
       try {
         if (playerRef.current) {
@@ -94,6 +120,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       if (playerRef.current) {
         playerRef.current.pause();
+        setPositionSeconds(Number(playerRef.current.currentTime ?? 0));
         setIsPlaying(false);
       }
     } catch (error) {
@@ -116,6 +143,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       if (playerRef.current) {
         playerRef.current.seekTo(seconds);
+        setPositionSeconds(seconds);
       }
     } catch (error) {
       console.error("Error seeking:", error);
@@ -129,6 +157,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         const duration = Number(playerRef.current.duration ?? 0);
         const newPos = Math.min(currentPos + seconds, duration);
         playerRef.current.seekTo(newPos);
+        setPositionSeconds(newPos);
       }
     } catch (error) {
       console.error("Error skipping forward:", error);
@@ -141,6 +170,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         const currentPos = Number(playerRef.current.currentTime ?? 0);
         const newPos = Math.max(currentPos - seconds, 0);
         playerRef.current.seekTo(newPos);
+        setPositionSeconds(newPos);
       }
     } catch (error) {
       console.error("Error skipping backward:", error);
@@ -160,8 +190,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     skipForward,
     skipBackward,
     playing: isPlaying,
-    positionSeconds: Number(player.currentTime ?? 0),
-    durationSeconds: Number(player.duration ?? 0)
+    positionSeconds,
+    durationSeconds,
   };
 
   return (
